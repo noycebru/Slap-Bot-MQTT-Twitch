@@ -1,1 +1,1 @@
-# Twitch-Slap-bot---MQTT
+# Twitch-Slap-bot-MQTT
