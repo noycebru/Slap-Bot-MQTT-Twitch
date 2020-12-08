@@ -9,10 +9,12 @@
 #include "robot_wifi.h"
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
+#include <Servo.h>
 
 //------------------------------
 WiFiClient wiFiClient;
 PubSubClient client(wiFiClient); // MQTT client
+Servo servo;
 
 // Put your setup code here, to run once:
 void setup() {
@@ -21,7 +23,7 @@ void setup() {
 
   setupPins();
 
-  setupWIFI();
+  setupServo();
  
   setupWIFI();
 
@@ -35,6 +37,7 @@ void setupSerial() {
 
 void setupPins() {
     pinMode(LED_PIN, OUTPUT);
+    pinMode(SLAP_PIN, OUTPUT);
 }
 
 void setupWIFI() {
@@ -60,6 +63,12 @@ void setupWIFI() {
 void setupMQTT() {
   client.setServer(MQTT_BROKER.c_str(), MQTT_PORT);
   client.setCallback(callback);// Initialize the callback routine
+}
+
+void setupServo() {
+  servo.attach(SLAP_PIN);
+  servo.write(SERVO_HOME_POSITION);
+  delay(2000);
 }
 
 void loop() {
@@ -110,31 +119,44 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println("] ");
   Serial.println(response);
 
-  // We need to set the default time for the older message format
-  long activateTime = ACTIVATE_TIME_DEFAULT;
+  // We need to set the default value for the older message format
+  long activateValue = ACTIVATE_DEFAULT;
 
   // This is quick and dirty with minimal input checking
   // We are the only ones sending this data so we shouldn't have to worry
   if (response.indexOf(",") != -1) {
     // It looks like we are receiving the new format so try and parse the activation time
     int delimiterLocation = response.indexOf(",");
-    activateTime = response.substring(delimiterLocation + 1, response.length()).toFloat();
+    activateValue = response.substring(delimiterLocation + 1, response.length()).toFloat();
   }
 
   // We need to turn the robot on
-  activateRobot(activateTime);
+  activateRobot(activateValue);
 }
 
-void activateRobot(long activateTime) {
+void activateRobot(long activateValue) {
 
   Serial.print("activateRobot called: ");
-  Serial.println(activateTime);
+  Serial.println(activateValue);
 
+  // Swing the servo out to for the first smack
+  servo.write(SERVO_FULL_POSITION);
+  delay(500); // We need a little bit extra of a delay here so it reaches full swing
+  servo.write(SERVO_PARTIAL_POSITION);
+  delay(200);
 
-  // TODO: Add code for new robot here
+  // We loop for the number of slaps
+  for (int i = 1; i < activateValue; i++) {
+    servo.write(SERVO_FULL_POSITION);
+    delay(200);
+    servo.write(SERVO_PARTIAL_POSITION);
+    delay(200);
+  }
 
+  // Move the servo back to the park position
+  servo.write(SERVO_HOME_POSITION);
+  delay(500);
 
   Serial.println("activateRobot completed!");
-  Serial.println();
-
+  Serial.println("\n");
 }
