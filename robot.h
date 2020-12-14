@@ -4,8 +4,8 @@
   Created with code from noycebru www.twitch.tv/noycebru
  *******************************************************************/
 
-#ifndef BUBBLE_MACHINE_H
-#define BUBBLE_MACHINE_H
+#ifndef SLAP_MACHINE_H
+#define SLAP_MACHINE_H
 
 // Configure your default pin numbers
 const int LED_PIN = 5;
